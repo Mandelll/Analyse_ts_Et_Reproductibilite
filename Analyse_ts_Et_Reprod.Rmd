@@ -1,0 +1,303 @@
+---
+title: "Séries temporelles et Reproductibilité"
+author: "Mandela M. Jacques - 111 224 204"
+date: "Analyse et modélisation d'agroécosystèmes ``-`` `r format(Sys.Date())`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+#Paramètres globaux
+knitr::opts_chunk$set(echo = TRUE, comment =  " ", fig.align='center', message = FALSE, warning = FALSE)
+
+```
+<font size="3"> 
+
+---
+
+---
+
+
+## Directives du devoir
+
+Les directives pour la réalisation de ce travail sont inscrites dans un fichier externe. Alors, elles pourront être consultées à partir du fichier Directives.md du dossier Directives.
+    
+## Question 1
+### Création d'une série temporelle du CO2 à partir des données de `hawai.csv`
+```{r}
+
+## Charger le jeu de données
+hawai <- read.csv("data/hawai.csv")
+
+## Prétraitement du jeu de données
+## Librairies requises
+
+library(lubridate)
+library(tidyverse)
+
+hawai <- hawai %>%
+  mutate(Date = time %>% date_decimal) %>%          ## Ajout d'une variable
+  filter(Date < ymd(20010801)) %>%                  ## Limiter les données à juil. 2001
+  mutate(Annee = Date %>% year())                   ## Ajout d'une variable numérique Année
+
+hawai %>% head(5)
+
+## Serie temporelle et visualisation
+## Librairies requises
+
+library(forecast)
+library(fpp2)
+library(dygraphs)
+
+hawai_ts <- ts(hawai %>% 
+                 select(CO2),                         ## Ne choisit que le CO2 atmosphérique
+               start = c(hawai$Annee[1], 3),          ## Débuter en mars
+               frequency = 12)                        ## Fréquence de 12 pour les 12 mois de l'année
+# Graphiques
+
+hawai_ts %>%
+  autoplot() + labs(x = "Année", y = "CO2")
+```
+
+> Remarques : Une tendance générale accusant une augmentation de la concentration du co2 atmosphérique en fonction du temps est observée. En plus de cela, une fluctuation saisonnière peut être directement observée Sur le graphique ci-dessus. Ainsi, de octobre à mai, la concentration du co2 atmosphérique augmente pour ensuite diminuer de avril à septembre. Mais, l'amplitude plus élevée de l'augmentation par rapport à la diminution produit la tendance à la hausse observée.
+
+Les graphiques suivants réalisés avec les fonctions ggseasonplot et ggsubseriesplot de forecast permettent d'investiguer la serie temporelle et d'observer les fluctuations saisonières. A noter que le module cowplot développé par le professeur 
+[Clauss O. Wilke](https://twitter.com/ClausWilke) pour la mise en forme des graphiques ggplot sera utilisé.
+
+```{r fig.dim= c(9, 8)}
+## Librairie requise
+
+library(cowplot)
+
+theme_set(theme_cowplot(font_size = 10, font_family = " ", line_size = 0.1))     ## cowplot change le theme
+plot1 <- ggseasonplot(window(hawai_ts, 1958+2/12, 2001-5/12)) + 
+  labs(y="CO2", x = " ", title = " ")
+plot2 <- ggseasonplot(window(hawai_ts, 1958+2/12, 2001-5/12), polar = TRUE) + 
+  labs(x = "CO2", title = " ") +
+  theme(legend.position="none")
+plot3 <- ggsubseriesplot(window(hawai_ts, 1958+2/12, 2001-5/12), polar = TRUE) + 
+  labs(x = "Mois", y = "CO2", title = " ")
+
+plot_grid(plot2, plot1, plot3, ncol = 1, labels = c("ggseasonplot_Polar", "ggseasonplot_Linear", "ggsubseriesplot_Polar"))
+
+```
+
+### Analyse de l'autocorrélation
+
+Maintenant, passons à l'analyse de l'autocorrélation sur la serie temporelle hawai_ts pour confirmer la forte tendance dont elle présente et les fluctuations saisonnières identifiées. Normalement, cette serie doit présenter sur son graphique d'autocorrélation un certain sommet à chaque saison tandis que les données de son graphiques de retardement se situeront très proche de la diagonale en raison de la forte tendance obervée à l'augmentation du CO2 atmosphérique en fonction du temps.
+
+```{r fig.dim= c(12, 10)}
+
+## ggdraw est la fonction de base de cowplot pour combiner des graphiques
+ggdraw() + 
+  
+  ## Transformation en objets graphiques et appel à la fonction draw_plot
+  draw_grob(ggplotGrob(autoplot(hawai_ts) + 
+              ggtitle("hawai: Série temporelle")), 
+            x = -.30, y = .20, scale = 0.4) +
+  
+  ## Ajout du graphique d'autocorrélation
+  draw_grob(ggplotGrob(ggAcf(hawai_ts) + ggtitle("hawai_ts: Autocorrélation")), 
+            x = .30, y = .20, scale = 0.4) + 
+  
+   ## Ajout du lag plot
+  draw_grob(ggplotGrob(gglagplot(hawai_ts) + ggtitle("hawai_ts: Lag plot")), 
+            x = 0.04, y = -.22, scale = 0.45)
+```
+
+Comme il a été mentionné plus haut, on observe deux sommets très visibles sur le graphique de l'autocorrélation au niveau des retards 12 et 24 approximativement. Cette oscillation de la surface du 2e graphique est due au caractère saisonnière des variations dans la concentration du CO2 atmosphérique et la diminution du coefficient de la fonction d'autocorrélation (ACF) en fonction du retard est causée par la tendance.  
+De plus, les lignes sur le graphique de retardement sont parfaitement rapprochées de la diagonale. On dirait qu'elles se confondent à la première bissectrice de chacun des repères. Ainsi, on confirme la forte tendance que montre la série temporelle.
+
+
+### Signification statistique
+
+Le test de signification statistique de la série temporelle sera réalisé avec la fonction `Box test` du package stats de base :
+
+```{r}
+Box <- Box.test(hawai_ts, lag = 20, type = "Ljung-Box") ## lag définit le nombre de coef. d'autocor.
+Box
+```
+
+Pour ce qui est de la signification statistique de la série temporelle, un `p-value` sensible égal à `r Box$p.value` suppose une probabilité quasiment nulle que cette série soit un bruit blanc. Le fait que la totalité des observations dépasse le seuil le confirme également.
+
+---
+
+## Question 2
+
+### Fractionnement des données
+
+Ce processus consiste à fractionner la série temporelle en deux parties. La première partie aura environ 70% des données et servira à l'entrainement du modèle tandis que l'autre partie pour tester le modèle obtenu.
+
+```{r}
+hawai_ts_train <- window(hawai_ts, start = 1958+2/12, end = (1958+2/12) + 0.7*length(hawai_ts)/12)
+hawai_ts_test <- window(hawai_ts, start = (1958+2/12) + 0.7*length(hawai_ts)/12)
+```
+
+La proportion des données qui sera utilisée à l'entrainement du modèle commence en mars 1958 (`start = 1958+2/12`) et se termine en juillet 1988 (`end = (1958+2/12) + 0.7*length(hawai_ts)/12`). Ce qui représente en réalité `r round(length(hawai_ts_train)/length(hawai_ts), 5)*100` % des données.
+
+---
+
+## Question 3
+
+### Création d'un modèle ETS  
+
+De nos jours, la modélisation de série temporelle représente un outil important pour la prévision (forecast) des évènements futurs. Plusieurs modèles ont été developpés durant les dernières décennies dont les modèles de lissage exponentiel simple (simple exponential smoothing (SES)) qui font des prévisions en fonction des données précédentes en les attribuant une pondération exponentielle qui diminue dans le temps. Ainsi, plus la date de mesure de la donnée est éloignée de la prévision, moins sera sa pondération.
+
+Les algorithmes des modèles SES utilisés varient avec les caractéristiques de la série temporelle. Pour automatiser cette méthode, le modèle ETS a été conçu. Celui-ci vise l'optimisation en fonction de l'erreur (E), la tendance (T) et la saison (S). Entre 3 choix possibles pour la tendance et la saison et 2 pour l'erreur, la fonction [`ets de forecast`](https://www.rdocumentation.org/packages/forecast/versions/8.5/topics/ets) choisit la combinaison qu'elle juge meilleure en minimisant par défaut le critère d'information d'Akaike (AIC) ([Hyndman et Athanasopoulos (2018), chapitre 7.6](https://otexts.com/fpp2/estimation-and-model-selection.html)).
+
+```{r}
+## appel à la fonction ets
+hawai_model_ets <- ets(hawai_ts_train)
+hawai_model_ets
+```
+
+Alors, un `r hawai_model_ets$method` a été choisi par la fonction ets. Cela signifie que l’erreur et la saison sont multiplicatives et la tendance est additive et adoucie. La methode amortie de Holt-Winters jugée la plus appropriée a été automatiquement utilisée parce qu'on utilise les arguments par defaut de la fonction ( [Voir plus sur la classification des SES](https://doi.org/10.1287/mnsc.15.5.311).)  
+
+
+### Visualisation du modèle ajusté par `ets`
+
+Passons maintenant à la visualisation du modèle avec autoplot du package ggplot2
+```{r}
+autoplot(hawai_model_ets)
+```
+
+Au lieu de se baser sur la minimisation de la somme des erreurs au carré, la fonction ets de `forecast` s'est appuyée sur le maximum de vraisemblance pour définir les principaux paramètres du modèle. La vraisemblance étant la probabilité d'adéquation entre les données de la série temporelle et le modèle fixé. Il faut rappeler que la fonction ets ne produit que le modèle prévisionnel ajusté. Les variations de la pente, du niveau et de la saison sont présentés au graphique précédent.
+
+### Projection de la prévision du CO2 atmosphérique
+
+Une fois le modèle ajusté avec ets, il est facile de faire la prévision en faisant appel à la fonction forecast avec un horizon prévisionnel fixé: 
+
+```{r fig.dim= c(12, 10)}
+hawai_ets <- hawai_model_ets %>% forecast(h = length(hawai_ts_test)) ## h est l'horizon prévisionnel
+hawai_ets %>% autoplot(xlab = "Année", ylab = "CO2" ) + 
+  autolayer(hawai_ts_test) +
+  autolayer(fitted(hawai_ets))
+```
+
+Dans le graphique ci-dessus, les données test, représentées par la ligne verte, accusent un écart non négligeable par rapport à la prévision pour la période allant du mois d'aout 1988 à juillet 2001. Pour les deux niveaux considérés, l'intervalle prévisionnel varie considérablement et de ce fait, le CO2 atmosphérique peut augmenter au diminuer à tout moment selon la prévision faite par le modèle ets établie.  
+
+De plus, on remarque que le modèle a bien simuler les données d'entrainement. Les lignes rouges (données prédites) et noir (données d'entrainement) sont quasiment identiques. Cependant, à partir des années 2000, l'intervalle prévisionnel pour les 2 niveaux 80 et 95 n'inclut pas à certains points les valeurs réelles observées sur le CO2 atmosphérique. Ce qui présume que le modèle n'est pas performance à la prévision des données. Toutefois, l'évaluation de la précision du modèle et des résidus par les fonction accuracy et checkresidual permettra d'analyser en détails les résultats.
+
+### Performance de la prévision
+
+Comme il a été mentionné plus haut, le modèle se comporte bien à l'égard des données qui ont servi à son entrainement. Tous les principaux tests (RMSE, MAPE, MASE) présentent des valeurs d'erreurs proches de zéro pour l'entrainement du modèles. Par contre, ces erreurs augmentent rapidement avec les données de test. Les résultats de la performance du  modèle qu'on juge à priori faible sont présentés ci-après :
+```{r}
+accuracy(hawai_ets, hawai_ts)
+```
+
+
+---
+
+## Question 4
+
+### Analyse des résidus
+
+L'analyse des résidus se fera par l'observation des graphiques des résidus et suivant la valeur du p-value du test Ljung-Box. Tout cela peut se faire à l'appel de la fonction [checkresidual](https://www.rdocumentation.org/packages/forecast/versions/8.5/topics/checkresiduals) du package forcast.
+
+```{r}
+checkresiduals(hawai_model_ets)
+```
+
+Les résidus du modèle semblent être du bruit blanc en analysant la distribution des résidus en fonction du temps et les valeurs de l'ACF qui sont en majorité conprise dans l'intervalle de confiance de 95%. De plus,il se peut que les intervales prévisionnels du modèles soient valide puisque les résidus semble être normalement distribués (A vérifier avec les tests de kurtosis et shapito). Néanmoins, le résultat du test Ljung-Box avec un p-value quasiment nulle suppose qu'il est presqu'improbable que les résidus constituent un bruit blanc. Ainsi, le modèle n'a pas pu intercepter toutes les structures qui contient la série temporelle.
+
+### Test de nomalité
+Un p-value du test de shapiro (package stats) très faible par rapport 0.05 et un coefficient de kurtosis << 0 expriment que les résidus ne sont pas normalement distribués
+```{r}
+shapiro.test(residuals(hawai_model_ets))
+
+library("e1071")
+kurtosis(residuals(hawai_model_ets), na.rm = TRUE)
+```
+
+---
+
+## Question 5
+
+### Commentaires et modèle alternatif
+
+La plupart des commentaires perninents ont été intégrés dans le document au fur et à mesure qu'on traite les étapes précédentes. En effet, il convient de rappeller les aspects suivants pour mettre en doute la fiabilité du modèle. Avec une probabilité si faible (1.216e-07 - test de Ljung-Box) que les résidus soient générés par un bruit blanc et une inadéquation entre les données de test et leur prévision, Le modèle obtenu n'est pas assez fiable pour être adopté. Qui plus est, la non-normalité des résidus entraine l'invalidité des intervalles prévisionnels. Le graphique suivant est une prévision de la concentration du CO2 pour 2020.
+
+```{r echo = FALSE}
+hawai_ts %>% ets() %>% forecast(h=12*19) %>% autoplot() + 
+  labs(label = "Prévision 2020", x = "Année", y = "CO2")
+```
+
+On a pu constater que la tendance à la hausse de la concentration du  CO2 athmosphérique se stabiliserait dans le temps suivant le modèle ajusté par la fonction ets et que l'augmentation significative de l'intervalle de prévision permettrait des variations de concentration de CO2 de grande amplitude à la hausse ou à la baisse. Ainsi, il ne serait pas prudent de se baser sur un tel modèle pour la prise de décision. 
+
+
+
+Une alternative pour une meilleure modélisation serait la méthode intégrative d'auto-régression utilisant la moyenne mobile (ARIMA). Cette méthode est basée sur la recherche d'un nombre **p** d'autorégression entre les variables, **d**  degré de première différentiation et **q** termes d'erreurs inpliquant dans la moyenne mobile. D'où l'appelation la formulation ARIMA(p, d, q). Dans ce cas, on aura un ARIMA(p, d, q)(P, D, Q)[x] puisque la saisonnalité de la série temporelles sera aussi affectée de trois paramètres et un terme qui désigne le nombre d'observations par an [x].
+
+
+
+Ainsi, l'utilisation de la fonction auto.arima avec un horizon prévisionnel égale à la longueur de hawai_ts_test.
+ 
+```{r echo = FALSE, fig.dim= c(12, 10)}
+hawai_model_arima <- hawai_ts_train %>% auto.arima()
+hawai_arima <- hawai_model_arima %>% forecast(h = length(hawai_ts_test))
+
+hawai_arima %>% autoplot(xlab = "Année", ylab = "CO2" ) + 
+  autolayer(hawai_ts_test) +
+  autolayer(fitted(hawai_arima))
+```
+
+
+Visiblement, une meilleure prévision a été obtenue avec la fonction auto.arima qui ajuste un modèle arima(1,1,1)(2,1,2)[12]. Les données test sont relativement proches de la prévision faite par le modèle.
+
+### Performance de la prévision
+
+```{r}
+accuracy(hawai_arima, hawai_ts)
+```
+
+Comparativement au modèle etp, le modèle arima ainsi ajusté présente une meilleure performance pour tous les termes d'erreurs calculées à l'exception du RMSE des données d'entrainement où le modèle ets présente une plus faible valeur. Pour la prévision, le modèle arima de de loin plus perfornante.
+
+### Analyse des résidus
+```{r fig.dim= c(12, 10)}
+checkresiduals(hawai_model_arima)
+```
+
+Avec une probabilité de 31.46 %, il est alors fort probable que les résidus génèrent un bruit blanc. C'est un paramètre qui renseigne sur la bonne performance du modèle.
+
+### Prévision du CO2 atmosphérique 2020
+
+```{r echo = FALSE}
+hawai_ts %>% auto.arima() %>% forecast(h=12*19) %>% autoplot() + 
+  labs(label = "Prévision 2020", x = "Année", y = "CO2")
+```
+
+Le modèle arima est mieux adaptée à la prévision que la modèle ets. La tendance et les saisonnalité qui caractérisent la série temporelle hawai_ts sont conservées dans les prévisions et l'intervalle de prévision est plus resreint. Cela permettra des amplitudes de variation plus faibles (moins de variances entre les prévisions) et des données plus fiables.
+
+---
+
+## Conclusion
+
+**forecast** constitue un puissant outil de modélisation des séries temporerelles. Elle est basée sur la même méthode des modèles d'apprentissage automatique en segmentant les données en une partie d'entrainement du modèle et une partie pour tester ce dernier. Deux fonctions très importants dans la prévision avec forecast sont ets et auto.arima. Elles sont basées sur le lissage exponentiel et l'analyse auto-régressive. Dans le cadre de ce travail, la fonction arima a permis de développer un modèle plus performant que celui réalisé avec ets. La forte tendance et la saisonnalité sont alors mieux capturer par la fonction auto.arima. Ce qui permet d'obtenir une distribution des résidus avec une probabilté de plus de 30 % pour qu'elle soit un bruit blanc.
+
+
+---
+
+---
+
+---
+
+ <fontsize = "2"><center>
+ 
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& FIN &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+
+Devoir réalisé par Mandela M. Jacques et présenté au Professeur Serge-Étienne Parent dans le cadre du cours  "Analyse et modélisation d'agroécosystèmes"...  
+
+---
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&&&&&&  
+&&&&&&&&&&&  
+&&&&&&  
+&&&&  
+&&
+ </center></font>
