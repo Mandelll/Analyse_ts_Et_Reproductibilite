@@ -280,7 +280,8 @@ Le modèle arima est mieux adaptée à la prévision que la modèle ets. La tend
 
 ---
 
- <fontsize = "2"><center>
+ <fontsize = "2">
+ <center>
  
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& FIN &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
@@ -300,4 +301,5 @@ Devoir réalisé par Mandela M. Jacques et présenté au Professeur Serge-Étien
 &&&&&&  
 &&&&  
 &&
- </center></font>
+ </center>
+ </font>
