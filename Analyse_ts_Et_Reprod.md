@@ -17,11 +17,13 @@ Les directives pour la réalisation de ce travail sont inscrites dans un fichier
 Question 1
 ----------
 
-### Création d'une série temporelle du CO2 à partir des données de `hawai.csv`
+### Création d'une série temporelle du CO2 à partir des données de `hawai1959.csv`
 
 ``` r
 ## Charger le jeu de données
-hawai <- read.csv("data/hawai.csv")
+hawai <- read.csv("data/hawai1959.csv")
+hawai$time[4] <- 1958.417             # Changement automatique au lieu de le faire 
+                                      # directement dans le fichier
 
 ## Prétraitement du jeu de données
 ## Librairies requises
@@ -41,7 +43,7 @@ hawai %>% head(5)
       1 1958.167 316.1000 1958-03-02 20:00:01  1958
       2 1958.250 317.2000 1958-04-02 06:00:00  1958
       3 1958.333 317.4333 1958-05-02 16:00:00  1958
-      4 1958.417 317.4333 1958-06-02 02:00:01  1958
+      4 1958.417 317.4333 1958-06-02 04:55:12  1958
       5 1958.500 315.6250 1958-07-02 12:00:00  1958
 
 ``` r
@@ -49,15 +51,12 @@ hawai %>% head(5)
 ## Librairies requises
 
 library(forecast)
-library(fpp2)
-library(dygraphs)
 
 hawai_ts <- ts(hawai %>% 
                  select(CO2),                         ## Ne choisit que le CO2 atmosphérique
                start = c(hawai$Annee[1], 3),          ## Débuter en mars
                frequency = 12)                        ## Fréquence de 12 pour les 12 mois de l'année
 # Graphiques
-
 hawai_ts %>%
   autoplot() + labs(x = "Année", y = "CO2")
 ```
@@ -285,7 +284,7 @@ Question 5
 
 ### Commentaires et modèle alternatif
 
-La plupart des commentaires perninents ont été intégrés dans le document au fur et à mesure qu'on traite les étapes précédentes. En effet, il convient de rappeller les aspects suivants pour mettre en doute la fiabilité du modèle. Avec une probabilité si faible (1.216e-07 - test de Ljung-Box) que les résidus soient générés par un bruit blanc et une inadéquation entre les données de test et leur prévision, Le modèle obtenu n'est pas assez fiable pour être adopté. Qui plus est, la non-normalité des résidus entraine l'invalidité des intervalles prévisionnels. Le graphique suivant est une prévision de la concentration du CO2 pour 2020.
+La plupart des commentaires pertinents ont été intégrés dans le document au fur et à mesure qu'on traite les étapes précédentes. En effet, il convient de rappeller les aspects suivants pour mettre en doute la fiabilité du modèle. Avec une probabilité si faible (1.216e-07 - test de Ljung-Box) que les résidus soient générés par un bruit blanc et une inadéquation entre les données de test et leur prévision, Le modèle obtenu n'est pas assez fiable pour être adopté. Qui plus est, la non-normalité des résidus entraine l'invalidité des intervalles prévisionnels. Le graphique suivant est une prévision de la concentration du CO2 pour 2020.
 
 <img src="Analyse_ts_Et_Reprod_files/figure-markdown_github/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
