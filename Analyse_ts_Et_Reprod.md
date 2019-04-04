@@ -1,7 +1,7 @@
 Séries temporelles et Reproductibilité
 ================
 Mandela M. Jacques - 111 224 204
-Analyse et modélisation d'agroécosystèmes `-` 2019-04-03
+Analyse et modélisation d'agroécosystèmes `-` 2019-04-04
 
 <font size="3">
 
@@ -73,7 +73,7 @@ Les graphiques suivants réalisés avec les fonctions ggseasonplot et ggsubserie
 
 library(cowplot)
 
-theme_set(theme_cowplot(font_size = 10, font_family = " ", line_size = 0.1))     ## cowplot change le theme
+theme_set(theme_cowplot(font_size = 10, font_family = "", line_size = 0.1))     ## cowplot change le theme
 plot1 <- ggseasonplot(window(hawai_ts, 1958+2/12, 2001-5/12)) + 
   labs(y="CO2", x = " ", title = " ")
 plot2 <- ggseasonplot(window(hawai_ts, 1958+2/12, 2001-5/12), polar = TRUE) + 
@@ -344,6 +344,10 @@ Conclusion
 ----------
 
 **forecast** constitue un puissant outil de modélisation des séries temporerelles. Elle est basée sur la même méthode des modèles d'apprentissage automatique en segmentant les données en une partie d'entrainement du modèle et une partie pour tester ce dernier. Deux fonctions très importants dans la prévision avec forecast sont ets et auto.arima. Elles sont basées sur le lissage exponentiel et l'analyse auto-régressive. Dans le cadre de ce travail, la fonction arima a permis de développer un modèle plus performant que celui réalisé avec ets. La forte tendance et la saisonnalité sont alors mieux capturer par la fonction auto.arima. Ce qui permet d'obtenir une distribution des résidus avec une probabilté de plus de 30 % pour qu'elle soit un bruit blanc.
+
+``` r
+warnings()
+```
 
 ------------------------------------------------------------------------
 
