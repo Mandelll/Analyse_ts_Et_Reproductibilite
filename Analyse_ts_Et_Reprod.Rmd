@@ -272,9 +272,7 @@ Le modèle arima est mieux adaptée à la prévision que la modèle ets. La tend
 
 **forecast** constitue un puissant outil de modélisation des séries temporerelles. Elle est basée sur la même méthode des modèles d'apprentissage automatique en segmentant les données en une partie d'entrainement du modèle et une partie pour tester ce dernier. Deux fonctions très importants dans la prévision avec forecast sont ets et auto.arima. Elles sont basées sur le lissage exponentiel et l'analyse auto-régressive. Dans le cadre de ce travail, la fonction arima a permis de développer un modèle plus performant que celui réalisé avec ets. La forte tendance et la saisonnalité sont alors mieux capturer par la fonction auto.arima. Ce qui permet d'obtenir une distribution des résidus avec une probabilté de plus de 30 % pour qu'elle soit un bruit blanc.
 
-```{r}
-warnings()
-```
+
 
 ---
 
