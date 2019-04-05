@@ -231,7 +231,7 @@ Une alternative pour une meilleure modélisation serait la méthode intégrative
 Ainsi, l'utilisation de la fonction auto.arima avec un horizon prévisionnel égale à la longueur de hawai_ts_test.
  
 ```{r echo = FALSE, fig.dim= c(12, 10)}
-hawai_model_arima <- hawai_ts_train %>% auto.arima()
+hawai_model_arima <- hawai_ts_train %>% auto.arima(approximation = T)
 hawai_arima <- hawai_model_arima %>% forecast(h = length(hawai_ts_test))
 
 hawai_arima %>% autoplot(xlab = "Année", ylab = "CO2" ) + 
@@ -265,6 +265,14 @@ hawai_ts %>% auto.arima() %>% forecast(h=12*19) %>% autoplot() +
 ```
 
 Le modèle arima est mieux adaptée à la prévision que la modèle ets. La tendance et les saisonnalité qui caractérisent la série temporelle hawai_ts sont conservées dans les prévisions et l'intervalle de prévision est plus resreint. Cela permettra des amplitudes de variation plus faibles (moins de variances entre les prévisions) et des données plus fiables.
+
+
+> On aurait pu améliorer le résultat du modèle arima pour les données test en ajustant les arguments de la fonction auto.arima de forecast. 
+
+![](image/Autre_ARIMA.JPG) 
+
+
+En fixant le paramètre approximation à "TRUE", on aurait un modèle ARIMA(3,1,1)(0, 1, 1)[12] qui augmenterait la performance sur les données test certes, mais qui provoquerait un temps de calcul plus long et une réduction de la performance de l'arima à l'entrainement.
 
 ---
 

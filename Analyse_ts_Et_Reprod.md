@@ -337,6 +337,12 @@ Avec une probabilité de 31.46 %, il est alors fort probable que les résidus g�
 
 Le modèle arima est mieux adaptée à la prévision que la modèle ets. La tendance et les saisonnalité qui caractérisent la série temporelle hawai\_ts sont conservées dans les prévisions et l'intervalle de prévision est plus resreint. Cela permettra des amplitudes de variation plus faibles (moins de variances entre les prévisions) et des données plus fiables.
 
+> On aurait pu améliorer le résultat du modèle arima pour les données test en ajustant les arguments de la fonction auto.arima de forecast.
+
+![](image/Autre_ARIMA.JPG)
+
+En fixant le paramètre approximation à "TRUE", on aurait un modèle ARIMA(3,1,1)(0, 1, 1)\[12\] qui augmenterait la performance sur les données test certes, mais qui provoquerait un temps de calcul plus long et une réduction de la performance de l'arima à l'entrainement.
+
 ------------------------------------------------------------------------
 
 Conclusion
