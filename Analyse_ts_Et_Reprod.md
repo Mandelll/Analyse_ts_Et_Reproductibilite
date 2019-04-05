@@ -292,7 +292,7 @@ On a pu constater que la tendance à la hausse de la concentration du CO2 athmos
 
 Une alternative pour une meilleure modélisation serait la méthode intégrative d'auto-régression utilisant la moyenne mobile (ARIMA). Cette méthode est basée sur la recherche d'un nombre **p** d'autorégression entre les variables, **d** degré de première différentiation et **q** termes d'erreurs inpliquant dans la moyenne mobile. D'où l'appelation la formulation ARIMA(p, d, q). Dans ce cas, on aura un ARIMA(p, d, q)(P, D, Q)\[x\] puisque la saisonnalité de la série temporelles sera aussi affectée de trois paramètres et un terme qui désigne le nombre d'observations par an \[x\].
 
-Ainsi, l'utilisation de la fonction auto.arima avec un horizon prévisionnel égale à la longueur de hawai\_ts\_test.
+Ainsi, l'utilisation de la fonction auto.arima avec un horizon prévisionnel égale à la longueur de hawai\_ts\_test permet d'aboutir au modèle suivant :
 
 <img src="Analyse_ts_Et_Reprod_files/figure-markdown_github/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
@@ -336,6 +336,12 @@ Avec une probabilité de 31.46 %, il est alors fort probable que les résidus g�
 <img src="Analyse_ts_Et_Reprod_files/figure-markdown_github/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
 
 Le modèle arima est mieux adaptée à la prévision que la modèle ets. La tendance et les saisonnalité qui caractérisent la série temporelle hawai\_ts sont conservées dans les prévisions et l'intervalle de prévision est plus resreint. Cela permettra des amplitudes de variation plus faibles (moins de variances entre les prévisions) et des données plus fiables.
+
+> On aurait pu améliorer le résultat du modèle arima pour les données test en ajustant les arguments de la fonction auto.arima de forecast.
+
+![](image/Autre_ARIMA.JPG)
+
+En fixant le paramètre approximation à "TRUE", on aurait un modèle ARIMA(3,1,1)(0, 1, 1)\[12\] qui augmenterait la performance sur les données test certes, mais qui provoquerait un temps de calcul plus long et une réduction de la performance de l'arima à l'entrainement.
 
 ------------------------------------------------------------------------
 
