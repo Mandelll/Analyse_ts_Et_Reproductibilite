@@ -231,7 +231,7 @@ Une alternative pour une meilleure modélisation serait la méthode intégrative
 Ainsi, l'utilisation de la fonction auto.arima avec un horizon prévisionnel égale à la longueur de hawai_ts_test permet d'aboutir au modèle suivant :
  
 ```{r echo = FALSE, fig.dim= c(12, 10)}
-hawai_model_arima <- hawai_ts_train %>% auto.arima()
+hawai_model_arima <- hawai_ts_train %>% auto.arima(approximation = T)
 hawai_arima <- hawai_model_arima %>% forecast(h = length(hawai_ts_test))
 
 hawai_arima %>% autoplot(xlab = "Année", ylab = "CO2" ) + 
